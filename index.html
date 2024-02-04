@@ -108,7 +108,7 @@
 		// フォームで選択された全ファイルを取得
 		var imgfile = this.files;
 		let url = URL.createObjectURL(imgfile[0]);
-
+		SetLoading();
 		let image = document.getElementById('image_view');
 		image.addEventListener('load', onImageLoad);
 		image.src = url;
@@ -122,6 +122,8 @@
 		else{
 			alert("読み込みエラー：縦、横が共に2000ピクセル以下の画像を選択してください。");
 		}
+
+		SetLoaded();
 	}
 
 	function ConvImg(){
@@ -141,8 +143,6 @@
 		document.getElementById("convimg").style.display = "block";
 
 		OutputPDF(rsltArr, csvdata, colorCnt);
-
-		//SetLoaded();
 	}
 
 	function SetLoading(){
