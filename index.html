@@ -1,0 +1,196 @@
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title></title>
+<!-- Released under the MIT license. -->
+<!-- https://opensource.org/licenses/MIT -->
+<!-- <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.1/jspdf.plugin.autotable.js"></script> -->
+
+<script type="text/javascript" src="./jspdf.umd.min.js"></script>
+<script type="text/javascript" src="./jspdf.plugin.autotable.min.js"></script>
+<script type="module" src="./Koruri-Regular-normal.js"></script>
+<script type="text/javascript" src="./conv.js"></script>
+<script type="text/javascript" src="./readcsv.js"></script>
+<script type="text/javascript" src="./output.js"></script>
+<link rel="stylesheet" href="style.css" type="text/css">
+</head>
+<body>
+	<div class="content">
+		<img src="./logo.png" class="logo" width=400 height=80>
+		<div class="summary">
+			Dot2Stitchは、ドット絵をクロスステッチやビーズの図案に変換できるサイトです。
+		</div>
+		<div class="rdbox">
+			<div class="rdbox_sub rdbox_left">
+				<div class="rdbox-title">刺繍糸</div>
+				<div class="rdbox_item">
+					<div>
+						<input type="radio" name="rd_material" id="rd_dmc" value="dmcdata" checked>
+						<label for="rd_dmc">DMC</label>
+					</div>
+				</div>
+			</div>
+			
+			<div class="rdbox_sub">
+				<div class="rdbox-title">ビーズ</div>
+				<div class="rdbox_item">
+					<div>
+						<input type="radio" name="rd_material" id="rd_fuse2" value="fuse2data">
+						<label for="rd_fuse2">フューズビーズミニ</label>
+					</div>
+					<div>
+						<input type="radio" name="rd_material" id="rd_fuse5" value="fuse5data">
+						<label for="rd_fuse5">フューズビーズミドル</label>
+					</div>
+					<div>
+						<input type="radio" name="rd_material" id="rd_perler" value="perlerdata">
+						<label for="rd_perler">パーラービーズ</label>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		
+		<div class="rdbox_single">
+			<div class="rdbox-title">変換方法</div>
+			<div class="rdbox_sub_single">
+				<div class="rdbox_item_single">
+					<label for="rd_cie94"><input type="radio" name="rd_conv" id="rd_cie94" value="cie94" checked>速度重視</label>
+				</div>
+				<div class="rdbox_item_single">
+					<label for="rd_ciede2000"><input type="radio" name="rd_conv" id="rd_ciede2000" value="ciede2000">品質重視</label>
+				</div>
+			</div>
+		</div>
+
+		<label class="conv_input"><input id="target" type="file" style="display:none;"　accept="image/*">変換する画像を選択</label>
+		<div class="dispimg">
+			読み込み画像
+			<br />
+			<img id="image_view">
+		</div>
+		<div class="dispimg">
+			変換結果
+			<br />
+			<canvas id="rslt_canvas"></canvas>
+		</div>
+	</div>
+
+	<!-- <div id="loader">
+		<div class="sk-chase">
+			<div class="sk-chase-dot"></div>
+			<div class="sk-chase-dot"></div>
+			<div class="sk-chase-dot"></div>
+			<div class="sk-chase-dot"></div>
+			<div class="sk-chase-dot"></div>
+			<div class="sk-chase-dot"></div>
+		</div>
+	</div> -->
+
+<script>
+	window.onload = function(){
+		//刺繍糸、ビーズ色データ読み込み
+		ReadCSV();
+	}
+
+	let context = null;
+	let rslt_ctxt = null;
+	const DOTSIZE = 1;
+	const SCALE_MARGIN = 1;
+	var selMaterial = "DMC";
+	
+	document.getElementById( "target" ).addEventListener('click', (e) => {
+		e.target.value = '';
+	});
+
+	document.getElementById( "target" ).addEventListener( "change", function() {
+		// フォームで選択された全ファイルを取得
+		var imgfile = this.files;
+		let url = URL.createObjectURL(imgfile[0]);
+
+		let image = document.getElementById('image_view');
+		image.addEventListener('load', onImageLoad);
+		image.src = url;
+	} ) ;
+
+	function onImageLoad() {
+		let image = document.getElementById('image_view');
+		if(image.width <= 2000 && image.height <= 2000){
+			ConvImg();
+		}
+		else{
+			alert("読み込みエラー：縦、横が共に2000ピクセル以下の画像を選択してください。");
+		}
+	}
+
+	function ConvImg(){
+		CreateContext();
+
+		let csvdata = SelectMaterial();
+		
+		//刺繍糸、ビーズ色変換
+		let retArr = ConvToDsg(context, csvdata);
+		let rsltArr = retArr[0];
+		let colorCnt = retArr[1];
+		//出力
+		OutputPng(rslt_ctxt, rsltArr, csvdata);
+		OutputPDF(rsltArr, csvdata, colorCnt);
+	}
+
+	function SetLoading(){
+		const loader = document.getElementById('loader');
+		loader.style.display ="block";
+	}
+
+	function SetLoaded(){
+		const loader = document.getElementById('loader');
+		loader.style.display ="none";
+	
+	}
+
+	function SelectMaterial(){
+		var csvdata;
+
+		let rdb = document.getElementsByName('rd_material');
+		for (let i = 0; i < rdb.length; i++) {
+			if (rdb[i].checked) {
+				if(rdb[i].value == "dmcdata"){
+					csvdata = dmcdata.concat();
+					selMaterial = "使用刺繍糸：DMC";
+				}
+				else if(rdb[i].value == "fuse2data"){
+					csvdata = fuse2data.concat();
+					selMaterial = "使用ビーズ：フューズビーズミニ";
+				}
+				else if(rdb[i].value == "fuse5data"){
+					csvdata = fuse5data.concat();
+					selMaterial = "使用ビーズ：フューズビーズミドル";
+				}
+				else if(rdb[i].value == "perlerdata"){
+					csvdata = perlerdata.concat();
+					selMaterial = "使用ビーズ：パーラービーズ";
+				}
+				break;
+			}
+		}
+
+		return csvdata;
+	}
+
+	function CreateContext(){
+		const canvas = document.createElement('canvas');
+		let image = document.getElementById('image_view');
+		canvas.width = image.width;
+		canvas.height = image.height;
+		context = canvas.getContext('2d');
+		context.drawImage(image, 0, 0, image.width, image.height);
+		
+		const rslt_canvas = document.getElementById("rslt_canvas");
+		rslt_canvas.width = canvas.width * DOTSIZE + SCALE_MARGIN;
+		rslt_canvas.height = canvas.height * DOTSIZE + SCALE_MARGIN;
+		rslt_ctxt = rslt_canvas.getContext("2d");
+	}
+</script>
+</body>
+</html>
