@@ -277,6 +277,7 @@ function rgbToLab(r,g,b) {
 
 //図面の記号を作成
 function CreateSymbolArr(){
+    symbolArr = [];
     symbolArr = symbolArr.concat(largeCapArr);
     symbolArr = symbolArr.concat(numberArr);
     symbolArr = symbolArr.concat(asciiArr);

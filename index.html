@@ -65,19 +65,19 @@
 		</div>
 
 		<label class="conv_input"><input id="target" type="file" style="display:none;"　accept="image/*">変換する画像を選択</label>
-		<div class="dispimg">
+		<div id="readimg" class="dispimg" style="display:none;">
 			読み込み画像
 			<br />
 			<img id="image_view">
 		</div>
-		<div class="dispimg">
+		<div id="convimg" class="dispimg" style="display:none;">
 			変換結果
 			<br />
 			<canvas id="rslt_canvas"></canvas>
 		</div>
 	</div>
 
-	<!-- <div id="loader">
+	<div id="loader" style="display:none;">
 		<div class="sk-chase">
 			<div class="sk-chase-dot"></div>
 			<div class="sk-chase-dot"></div>
@@ -86,7 +86,7 @@
 			<div class="sk-chase-dot"></div>
 			<div class="sk-chase-dot"></div>
 		</div>
-	</div> -->
+	</div>
 
 <script>
 	window.onload = function(){
@@ -125,7 +125,10 @@
 	}
 
 	function ConvImg(){
+		//SetLoading();
+
 		CreateContext();
+		document.getElementById("readimg").style.display = "block";
 
 		let csvdata = SelectMaterial();
 		
@@ -135,7 +138,11 @@
 		let colorCnt = retArr[1];
 		//出力
 		OutputPng(rslt_ctxt, rsltArr, csvdata);
+		document.getElementById("convimg").style.display = "block";
+
 		OutputPDF(rsltArr, csvdata, colorCnt);
+
+		//SetLoaded();
 	}
 
 	function SetLoading(){
@@ -156,19 +163,19 @@
 		for (let i = 0; i < rdb.length; i++) {
 			if (rdb[i].checked) {
 				if(rdb[i].value == "dmcdata"){
-					csvdata = dmcdata.concat();
+					csvdata = JSON.parse(JSON.stringify(dmcdata));
 					selMaterial = "使用刺繍糸：DMC";
 				}
 				else if(rdb[i].value == "fuse2data"){
-					csvdata = fuse2data.concat();
+					csvdata = JSON.parse(JSON.stringify(fuse2data));
 					selMaterial = "使用ビーズ：フューズビーズミニ";
 				}
 				else if(rdb[i].value == "fuse5data"){
-					csvdata = fuse5data.concat();
+					csvdata = JSON.parse(JSON.stringify(fuse5data));
 					selMaterial = "使用ビーズ：フューズビーズミドル";
 				}
 				else if(rdb[i].value == "perlerdata"){
-					csvdata = perlerdata.concat();
+					csvdata = JSON.parse(JSON.stringify(perlerdata));
 					selMaterial = "使用ビーズ：パーラービーズ";
 				}
 				break;
