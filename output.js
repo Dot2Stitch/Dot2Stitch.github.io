@@ -146,6 +146,8 @@ function DrawPage(wpage, hpage, img, pdf){
     const imgData = canvas.toDataURL();
     pdf.addImage(imgData, 'png', IMG_MARGIN, IMG_MARGIN, WPAGE_MAX * IMG_SCALE, HPAGE_MAX * IMG_SCALE);
 
+    pdf.setTextColor(0,0,0);
+    
     //横方向の線描画
     for(let h = 0; h < HPAGE_MAX + 1; h++){
         if(h % 10 == 0){
