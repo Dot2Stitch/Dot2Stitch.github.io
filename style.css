@@ -14,7 +14,7 @@
 .rdbox {
   display: flex;
   margin-left: 1em;
-  margin-bottom: 1em;
+  margin-bottom: 1.5em;
   border: 2px solid #7f7f7f; /* 線の色 */
   width: 40rem;
 }
