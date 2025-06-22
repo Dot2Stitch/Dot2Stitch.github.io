@@ -109,6 +109,8 @@ function DrawUsedColor(rsltArr, csvdata, pdf, colorCnt){
 
 }
 
+var outputway = false;
+
 //図案出力
 function DrawPattern(rsltArr, csvdata, img, pdf){
     var width = rsltArr.length;
@@ -119,39 +121,69 @@ function DrawPattern(rsltArr, csvdata, img, pdf){
     pdf.setDrawColor('#000000');
     pdf.setFontSize(4);
 
-    for(let hpage = 0; hpage < hpageMax; hpage++){
-        for(let wpage = 0; wpage < wpageMax; wpage++){
-            pdf.addPage("a4", "portrait");
-
-            //PDF1ページ描画
-            DrawPage(wpage, hpage, img, pdf);
-
-            DrawString(wpage, hpage, img, pdf, rsltArr, csvdata);
+        //変換方法選択
+    let rdb = document.getElementsByName('rd_output');
+    for (let i = 0; i < rdb.length; i++) {
+        if (rdb[i].checked) {
+            if(rdb[i].value == "splitpage"){
+                outputway = true;
+            }
+            else{
+                outputway = false;
+            }
         }
+    }
+
+    if(outputway == true) {
+        for(let hpage = 0; hpage < hpageMax; hpage++){
+            for(let wpage = 0; wpage < wpageMax; wpage++){
+                pdf.addPage("a4", "portrait");
+
+                //PDF1ページ描画
+                DrawPage(wpage, hpage, WPAGE_MAX, HPAGE_MAX, img, pdf);
+
+                DrawString(wpage, hpage, WPAGE_MAX, HPAGE_MAX, img, pdf, rsltArr, csvdata);
+            }
+        }
+    }
+    else {
+        var pagewidth = width * IMG_SCALE + IMG_MARGIN * 2;
+        var pageheight = height * IMG_SCALE + IMG_MARGIN * 2;
+
+        if(pagewidth > pageheight){
+            pdf.addPage([pagewidth, pageheight], "landscape");
+        }
+        else {
+            pdf.addPage([pagewidth, pageheight], "portrait");
+        }
+
+        DrawPage(0, 0, width, height, img, pdf);
+
+        DrawString(0, 0, width, height, img, pdf, rsltArr, csvdata);
     }
 }
 
 //PDF1ページ描画
-function DrawPage(wpage, hpage, img, pdf){
+function DrawPage(wpage, hpage, width, height, img, pdf){
     var lineStart = 0;
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
 
-    canvas.width = WPAGE_MAX;
-    canvas.height = HPAGE_MAX;
+    canvas.width = width;
+    canvas.height = height;
     
-    context.drawImage(img, wpage * WPAGE_MAX, hpage * HPAGE_MAX, WPAGE_MAX, HPAGE_MAX,
-                      0, 0, WPAGE_MAX, HPAGE_MAX);
+    context.drawImage(img, wpage * width, hpage * height, width, height,
+                      0, 0, width, height);
         
     const imgData = canvas.toDataURL();
-    pdf.addImage(imgData, 'png', IMG_MARGIN, IMG_MARGIN, WPAGE_MAX * IMG_SCALE, HPAGE_MAX * IMG_SCALE);
+    pdf.addImage(imgData, 'png', IMG_MARGIN, IMG_MARGIN, width * IMG_SCALE, height * IMG_SCALE);
 
     pdf.setTextColor(0,0,0);
     
     //横方向の線描画
-    for(let h = 0; h < HPAGE_MAX + 1; h++){
+    for(let h = 0; h < height + 1; h++){
         if(h % 10 == 0){
-            pdf.text(String(h + hpage * HPAGE_MAX), IMG_MARGIN - 12, h * IMG_SCALE + IMG_MARGIN + 2);
+            pdf.text(String(h + hpage * height), IMG_MARGIN - 12, h * IMG_SCALE + IMG_MARGIN + 2);
 
             pdf.setLineWidth(1); 
             lineStart = IMG_MARGIN - 5;
@@ -162,13 +194,13 @@ function DrawPage(wpage, hpage, img, pdf){
         }
         pdf.line(lineStart, 
                  h * IMG_SCALE + IMG_MARGIN, 
-                 WPAGE_MAX * IMG_SCALE + IMG_MARGIN, 
+                 width * IMG_SCALE + IMG_MARGIN, 
                  h * IMG_SCALE + IMG_MARGIN);
     }
     //縦方向の線描画
-    for(let w = 0; w < WPAGE_MAX + 1; w++){
+    for(let w = 0; w < width + 1; w++){
         if(w % 10 == 0){
-            pdf.text(String(w + wpage * WPAGE_MAX), w * IMG_SCALE + IMG_MARGIN - 2, IMG_MARGIN - 6);
+            pdf.text(String(w + wpage * width), w * IMG_SCALE + IMG_MARGIN - 2, IMG_MARGIN - 6);
 
             pdf.setLineWidth(1); 
             lineStart = IMG_MARGIN - 5;
@@ -180,31 +212,31 @@ function DrawPage(wpage, hpage, img, pdf){
         pdf.line(w * IMG_SCALE + IMG_MARGIN, 
                  lineStart, 
                  w * IMG_SCALE + IMG_MARGIN, 
-                 HPAGE_MAX * IMG_SCALE + IMG_MARGIN);
+                 height * IMG_SCALE + IMG_MARGIN);
     }
 
     return imgData;
 }
 
-function DrawString(wpage, hpage, img, pdf, rsltArr, csvdata){
-    let width = rsltArr.length;
-    let height = rsltArr[0].length;
+function DrawString(wpage, hpage, width, height, img, pdf, rsltArr, csvdata){
+    let imgwidth = rsltArr.length;
+    let imgheight = rsltArr[0].length;
 
-    let hmax = HPAGE_MAX;
-    let wmax = WPAGE_MAX;
+    let hmax = height;
+    let wmax = width;
 
-    if((wpage + 1) * WPAGE_MAX > width){
-        wmax = width - wpage * WPAGE_MAX;
+    if((wpage + 1) * width > imgwidth){
+        wmax = imgwidth - wpage * width;
     }
 
-    if((hpage + 1) * HPAGE_MAX > height){
-        hmax = height - hpage * HPAGE_MAX;
+    if((hpage + 1) * height > imgheight){
+        hmax = imgheight - hpage * height;
     }
 
     for(let w = 0; w < wmax; w++){
         for(let h = 0; h < hmax; h++){
-            let wel = w + wpage * WPAGE_MAX;
-            let hel = h + hpage * HPAGE_MAX;
+            let wel = w + wpage * width;
+            let hel = h + hpage * height;
             let idx = rsltArr[wel][hel];
             let str = csvdata[idx][6];
 

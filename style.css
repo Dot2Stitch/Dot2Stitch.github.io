@@ -61,6 +61,11 @@
   margin-left: 2em;
 }
 
+.rdbox_item_output {
+  float: left;
+  flex-flow: flex;
+  margin-left: 8em;
+}
 
 .rdbox_left {
   border-right:1px dashed #7f7f7f;
